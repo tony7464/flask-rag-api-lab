@@ -2,6 +2,7 @@ MIN_QUESTION_LENGTH = 3
 
 
 def _error(error, message):
+    """Build the (None, error_dict) tuple for an invalid payload."""
     return None, {"error": error, "message": message}
 
 

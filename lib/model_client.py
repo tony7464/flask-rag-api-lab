@@ -10,7 +10,21 @@ class ModelClientError(Exception):
 
 
 def generate_answer(prompt, model_name=DEFAULT_MODEL_NAME, base_url=DEFAULT_BASE_URL):
-    """Send the prompt to a local Ollama model and return the generated answer."""
+    """Send the prompt to a local Ollama model and return the generated answer.
+
+    Args:
+        prompt: The full prompt text to send to the model.
+        model_name: The Ollama model to use.
+        base_url: The base URL of the Ollama service.
+
+    Returns:
+        The model's answer text with surrounding whitespace removed.
+
+    Raises:
+        ModelClientError: If the prompt is blank, the request fails, the
+            service returns invalid JSON, or the response field is missing
+            or blank.
+    """
     if not isinstance(prompt, str) or not prompt.strip():
         raise ModelClientError("Prompt must be a non-empty string.")
 
@@ -20,9 +34,13 @@ def generate_answer(prompt, model_name=DEFAULT_MODEL_NAME, base_url=DEFAULT_BASE
     try:
         response = requests.post(url, json=payload, timeout=REQUEST_TIMEOUT_SECONDS)
         response.raise_for_status()
-        data = response.json()
     except requests.RequestException as exc:
         raise ModelClientError(f"Model request failed: {exc}") from exc
+
+    # requests' JSONDecodeError subclasses both RequestException and ValueError,
+    # so decoding must be handled separately to report it accurately.
+    try:
+        data = response.json()
     except ValueError as exc:
         raise ModelClientError("Model service returned invalid JSON.") from exc
 
